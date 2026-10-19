@@ -2,4 +2,4 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body,#root{height:100%;}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Tahoma,sans-serif;font-size:15px;overflow:hidden}
-#app{display:flex;height:100vh}
+.btn{background:var(--card);border:1px solid var(--border);color:var(--text);padding:9px 15px;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit}
