@@ -22,7 +22,6 @@ jobs:
           npm install
           npm run build
           
-      # إنشاء ملف يحمل رقم التحديث (لنظام التحديث التلقائي)
       - name: Generate Version File
         run: |
           echo "{\"version\": \"${{ github.run_number }}\"}" > dist/version.json
@@ -42,7 +41,6 @@ jobs:
       - name: Setup Capacitor
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          echo '{"appId": "com.atheer.app", "appName": "Atheer", "webDir": "dist", "server": {"url": "https://imadeddiinemenouer-a11y.github.io/Atheer-app/", "cleartext": true}}' > capacitor.config.json
           npx cap add android
           npx cap sync
           
