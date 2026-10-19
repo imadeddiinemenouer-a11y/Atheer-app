@@ -3,6 +3,7 @@ on: [push, workflow_dispatch]
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # إيقاف العملية إذا تجاوزت 15 دقيقة لمنع التعليق
     permissions:
       contents: read
       pages: write
@@ -12,12 +13,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
+          cache: 'gradle'
           
-      # هذا هو السطر الذي كان ناقصاً وسبب الفشل
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
           
@@ -58,7 +60,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
