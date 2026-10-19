@@ -12,22 +12,16 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-      - name: Install dependencies
-        run: npm install
-      - name: Build Web App
-        run: npm run build
-      - name: Install Capacitor
-        run: npm install @capacitor/core @capacitor/cli @capacitor/android
-      - name: Setup Capacitor Android
+      - name: Install dependencies & Build Web
         run: |
-          npx cap init "Atheer" "com.atheer.app" --web-dir dist
+          npm install
+          npm run build
+      - name: Setup Capacitor
+        run: |
+          npm install @capacitor/core@5 @capacitor/cli@5 @capacitor/android@5
+          echo '{"appId": "com.atheer.app", "appName": "Atheer", "webDir": "dist"}' > capacitor.config.json
           npx cap add android
           npx cap sync
-      - name: Setup Android SDK Path
-        run: |
-          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
-          echo "Accepting licenses..."
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
       - name: Build APK
         run: |
           cd android
