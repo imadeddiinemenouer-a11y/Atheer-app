@@ -1,0 +1,9 @@
+{
+  "appId": "com.atheer.app",
+  "appName": "Atheer",
+  "webDir": "dist",
+  "server": {
+    "url": "https://imadeddiinemenouer-a11y.github.io/Atheer-app/",
+    "cleartext": true
+  }
+}
