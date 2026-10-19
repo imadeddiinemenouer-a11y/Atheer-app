@@ -17,6 +17,10 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
           
+      # هذا هو السطر الذي كان ناقصاً وسبب الفشل
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+          
       - name: Install and Build Web
         run: |
           npm install
