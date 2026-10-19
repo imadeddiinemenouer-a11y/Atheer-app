@@ -1,8 +1,12 @@
-name: Build Android APK
+name: Build and Deploy
 on: [push, workflow_dispatch]
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -12,22 +16,50 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-      - name: Install dependencies & Build Web
+          
+      - name: Install and Build Web
         run: |
           npm install
           npm run build
+          
+      # إنشاء ملف يحمل رقم التحديث (لنظام التحديث التلقائي)
+      - name: Generate Version File
+        run: |
+          echo "{\"version\": \"${{ github.run_number }}\"}" > dist/version.json
+          
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload Web Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
       - name: Setup Capacitor
         run: |
-          npm install @capacitor/core@5 @capacitor/cli@5 @capacitor/android@5
-          echo '{"appId": "com.atheer.app", "appName": "Atheer", "webDir": "dist"}' > capacitor.config.json
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          echo '{"appId": "com.atheer.app", "appName": "Atheer", "webDir": "dist", "server": {"url": "https://imadeddiinemenouer-a11y.github.io/Atheer-app/", "cleartext": true}}' > capacitor.config.json
           npx cap add android
           npx cap sync
+          
+      - name: Install Capacitor Assets
+        run: npm install @capacitor/assets
+        
+      - name: Generate App Icon
+        run: npx capacitor-assets generate --android
+        
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
-      - uses: actions/upload-artifact@v4
+          
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: atheer-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
