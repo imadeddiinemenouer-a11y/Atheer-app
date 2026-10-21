@@ -18,7 +18,6 @@ jobs:
       with:
         node-version: '20'
 
-    # تم تعديل إصدار جافا هنا إلى 21 لحل مشكلة الخطأ
     - name: Set up Java JDK
       uses: actions/setup-java@v4
       with:
@@ -33,6 +32,20 @@ jobs:
       run: |
         npx cap add android
         npx cap sync android
+
+    # ✅ هذا هو الحل: تعديل ملف build.gradle لإجبار استخدام إصدار Kotlin واحد
+    - name: Fix Kotlin stdlib conflicts
+      run: |
+        cd android
+        echo "" >> build.gradle
+        echo "allprojects {" >> build.gradle
+        echo "    configurations.all {" >> build.gradle
+        echo "        resolutionStrategy {" >> build.gradle
+        echo "            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'" >> build.gradle
+        echo "            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'" >> build.gradle
+        echo "        }" >> build.gradle
+        echo "    }" >> build.gradle
+        echo "}" >> build.gradle
 
     - name: Build APK with Gradle
       run: |
