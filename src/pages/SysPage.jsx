@@ -39,8 +39,7 @@ export default function SysPage(){
     <label className="tgl"><input type="checkbox" checked={!!S.cfg.stealth} onChange={e=>{S.cfg.stealth=e.target.checked?1:0;sv('cfg')}}/> 🕵️ وضع خفي — آلة حاسبة مقنعة</label>
     {out}
     <h4>السجل</h4>
-    <div className="log">{S.logs.join('
-')}</div>
+    <div className="log">{S.logs.join('\n')}</div>
     <button className="b gray" onClick={()=>{S.logs=[];sv('logs')}}>🧹 مسح السجل</button>
   </div>;
 }
