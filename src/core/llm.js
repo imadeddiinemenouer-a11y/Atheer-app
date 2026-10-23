@@ -1,8 +1,9 @@
-import {Wllama} from '@wllama/wllama';
+import { Wllama } from '@wllama/wllama';
+// هذا السطر هو "الحل الحقيقي": يجبر Vite على نسخ ملف الـ wasm ووضعه في مجلد الـ assets
 import wasmUrl from '@wllama/wllama/src/single-thread/wllama.wasm?url';
-import {P,G,AK,D} from './db.js';
-import {S,sv,toast,log} from './store.js';
-import {err} from './errors.js';
+import { P,G,AK,D } from './db.js';
+import { S,sv,toast,log } from './store.js';
+import { err } from './errors.js';
 
 export const LM={w:null,ready:false,busy:false,name:''};
 
@@ -12,7 +13,10 @@ export async function loadModelFile(f,keep){
   if(LM.w){try{await LM.w.exit()}catch(e){}LM.w=null;LM.ready=false}
   try{
     if(!(f instanceof File))f=new File([f],'model.gguf');
-    LM.w=new Wllama({'wllama.wasm':wasmUrl});
+    
+    // نمرر المسار المباشر الذي تولاه Vite بنسخه
+    LM.w=new Wllama({'wllama.wasm': wasmUrl});
+    
     await LM.w.loadModel([f],{n_gpu_layers:0});
     LM.ready=true;LM.name=f.name;
     if(keep){
