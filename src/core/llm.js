@@ -12,7 +12,7 @@ export async function loadModelFile(f,keep){
   try{
     if(!(f instanceof File))f=new File([f],'model.gguf');
     
-    // ✅ نمرر المسار المحلي الذي رفعته يدوياً في مجلد dist
+    // نمرر المسار الذي نسخه Vite إلى جذر التطبيق
     LM.w = new Wllama({
       'wllama.wasm': './wllama.wasm' 
     });
@@ -28,7 +28,7 @@ export async function loadModelFile(f,keep){
   }catch(e){err(e,'model');toast('⚠️ '+(e.message||e).toString().slice(0,90))}
   LM.busy=false;
 }
-
+// ... (باقي الدوال تبقى كما هي)
 export async function useModel(k){
   const b=await G('model',k);
   if(!b)return toast('النموذج غير موجود');
