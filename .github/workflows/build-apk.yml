@@ -20,6 +20,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Inspect wllama package
+        run: |
+          echo "=== package.json ==="
+          cat node_modules/@wllama/wllama/package.json || true
+          echo "=== top level ==="
+          ls -la node_modules/@wllama/wllama || true
+          echo "=== js files (2 levels) ==="
+          find node_modules/@wllama/wllama -maxdepth 2 -name "*.js" | head -30 || true
+
+      - name: Verify config file integrity
+        run: |
+          head -n 3 vite.config.js
+          tail -n 3 vite.config.js
+
+      - name: Validate vite config loads
+        run: node -e "import('./vite.config.js').then(function(m){console.log('CONFIG OK:',typeof m.default)}).catch(function(e){console.error('CONFIG BROKEN ->',e.message);process.exit(1)})"
+
       - run: npm run build
 
       - name: Assemble Android project
