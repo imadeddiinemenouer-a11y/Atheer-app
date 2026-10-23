@@ -1,14 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'node:path';
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // ضروري للعمل داخل الـ APK
+  base: './', 
   build: {
-    outDir: 'dist', // مجلد البناء
-    emptyOutDir: false, // ✅ هذا هو السر: لا تحذف ملف wllama.wasm الموجود مسبقاً!
+    outDir: 'dist', 
+    emptyOutDir: false, // يمنع حذف ملف wllama.wasm الذي رفعته يدوياً
   },
-  optimizeDeps: {
-    exclude: ['@wllama/wllama'] // نمنع Vite من محاولة تحسينها
+  resolve: {
+    alias: {
+      // ✅ الحل: توجيه Vite مباشرة إلى ملف المكتبة الحقيقي داخل node_modules
+      '@wllama/wllama': path.resolve(__dirname, 'node_modules/@wllama/wllama/esm/index.js')
+    }
   }
 });
