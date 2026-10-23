@@ -1,0 +1,22 @@
+plugins {
+    id "com.android.application"
+}
+android {
+    namespace "com.atheer.app"
+    compileSdk 34
+    defaultConfig {
+        applicationId "com.atheer.app"
+        minSdk 21
+        targetSdk 34
+        versionCode PLACEHOLDER_VC
+        versionName "12.0"
+    }
+    buildTypes {
+        debug {}
+        release { minifyEnabled false }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
