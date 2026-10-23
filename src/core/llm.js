@@ -1,6 +1,4 @@
 import { Wllama } from '@wllama/wllama';
-// السطر السحري: يجبر Vite على نسخ ملف الـ wasm ووضعه في مجلد الـ assets
-import wasmUrl from '@wllama/wllama/src/single-thread/wllama.wasm?url';
 import { P,G,AK,D } from './db.js';
 import { S,sv,toast,log } from './store.js';
 import { err } from './errors.js';
@@ -14,8 +12,10 @@ export async function loadModelFile(f,keep){
   try{
     if(!(f instanceof File))f=new File([f],'model.gguf');
     
-    // نمرر المسار المباشر الذي تولاه Vite بنسخه
-    LM.w=new Wllama({'wllama.wasm': wasmUrl});
+    // نحدد المسار إلى ملف الـ wasm الذي وضعناه يدوياً في مجلد dist
+    LM.w = new Wllama({
+      'wllama.wasm': './wllama.wasm' 
+    });
     
     await LM.w.loadModel([f],{n_gpu_layers:0});
     LM.ready=true;LM.name=f.name;
@@ -28,6 +28,8 @@ export async function loadModelFile(f,keep){
   }catch(e){err(e,'model');toast('⚠️ '+(e.message||e).toString().slice(0,90))}
   LM.busy=false;
 }
+
+// ... (باقي الدوال تبقى كما هي في ملفك)
 export async function useModel(k){
   const b=await G('model',k);
   if(!b)return toast('النموذج غير موجود');
