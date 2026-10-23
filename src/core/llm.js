@@ -12,7 +12,7 @@ export async function loadModelFile(f,keep){
   try{
     if(!(f instanceof File))f=new File([f],'model.gguf');
     
-    // نحدد المسار إلى ملف الـ wasm الذي وضعناه يدوياً في مجلد dist
+    // ✅ نمرر المسار المحلي الذي رفعته يدوياً في مجلد dist
     LM.w = new Wllama({
       'wllama.wasm': './wllama.wasm' 
     });
@@ -29,7 +29,6 @@ export async function loadModelFile(f,keep){
   LM.busy=false;
 }
 
-// ... (باقي الدوال تبقى كما هي في ملفك)
 export async function useModel(k){
   const b=await G('model',k);
   if(!b)return toast('النموذج غير موجود');
