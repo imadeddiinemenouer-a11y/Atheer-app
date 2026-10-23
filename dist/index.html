@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
-<title>أثير v10 — العقل الهجين المحلي</title>
+<title>أثير v12 — النواة الموحّدة</title>
 <style>
 :root{--bg:#0b1020;--s1:#121a30;--s2:#1a2542;--bd:#263353;--tx:#e9eefb;--dim:#93a0c4;--ac:#67e8f9;--ac2:#a78bfa;--ok:#4ade80;--er:#f87171;--wa:#fbbf24;--r:14px;--grad:linear-gradient(135deg,#667eea,#764ba2)}
 @media(prefers-color-scheme:light){:root{--bg:#f4f6fc;--s1:#fff;--s2:#eceffa;--bd:#d6dcea;--tx:#141a2c;--dim:#5b6785;--ac:#0891b2;--ac2:#7c3aed;--grad:linear-gradient(135deg,#667eea,#764ba2);color-scheme:light}}
@@ -62,15 +62,22 @@ textarea{resize:vertical}
 .tgl input{width:18px;height:18px;flex:none}
 .ts{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--bd);padding:9px 16px;border-radius:99px;z-index:60;max-width:92vw;font-size:.8em;box-shadow:0 6px 20px #0008}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+#stealthCalc{display:none;position:fixed;inset:0;background:#111827;z-index:999;flex-direction:column;align-items:center;justify-content:center}
+#stealthCalc .box{width:280px;background:#1f2937;border-radius:22px;padding:18px;box-shadow:0 10px 40px #0008}
+#calcScr{background:#030712;color:#e5e7eb;border-radius:14px;padding:18px;font-size:28px;text-align:right;min-height:56px;direction:ltr;overflow:hidden;word-break:break-all}
+#calcKeys{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}
+#calcVer{text-align:center;color:#4b5563;font-size:10px;margin-top:12px}
 </style>
 </head>
 <body>
 <header>
-<h1>✦ أثير <span style="font-size:.55em;opacity:.85">v10 الهجين</span><span id="ver">v10</span></h1>
+<h1>✦ أثير <span style="font-size:.55em;opacity:.85">v12 الموحّد</span><span id="ver">v12</span></h1>
 <div class="sub"><span class="dot" id="netdot"></span> عقل محلي هجين · ذاكرة تقوّي وتنسى · مهارات معزولة · تصنيف نوايا يتعلم منك</div>
 </header>
 <nav id="tabs"></nav>
 <main id="main"></main>
+<div id="stealthCalc"><div class="box"><div id="calcScr">0</div><div id="calcKeys"></div><div id="calcVer">Calculator v2.1.4</div></div></div>
 <script>
 'use strict';
 /* =====================================================
@@ -98,7 +105,9 @@ cfg:{web:0,strict:1,auto:0,tts:0,memFirst:1,act:''}},IX={N:0,len:0,post:{},cl:{}
 const sv=k=>{clearTimeout(sv[k]);sv[k]=setTimeout(()=>P('kv',k,S[k]),400)};
 const svIx=()=>{clearTimeout(svIx.t);svIx.t=setTimeout(async()=>P('kv','ix',await gz(JSON.stringify(IX))),1500)};
 const svG=()=>{clearTimeout(svG.t);svG.t=setTimeout(async()=>P('kv','g',await gz(JSON.stringify(Gr))),1500)};
-function err(e,w){try{S.errs.unshift({t:Date.now(),w:w||'',m:String(e&&e.message||e).slice(0,180)});S.errs.length=Math.min(S.errs.length,40);sv('errs')}catch(_){}}
+function err(e,w){w=w||'unknown';try{S.errCtx=S.errCtx||{};S.errCtx[w]=(S.errCtx[w]||0)+1;
+ if(S.errCtx[w]>=3&&!(S.safeMode&&S.safeMode[w])){S.safeMode=S.safeMode||{};S.safeMode[w]=Date.now();toast('⚠️ وضع آمن: عُطّل «'+w+'» ساعة')}
+ S.errs.unshift({t:Date.now(),w:w,m:String(e&&e.message||e).slice(0,180)});S.errs.length=Math.min(S.errs.length,40);sv('errs');sv('errCtx');sv('safeMode')}catch(_){}}
 addEventListener('error',e=>err(e.error||e.message,'window'));addEventListener('unhandledrejection',e=>err(e.reason,'promise'));
 const log=m=>{try{S.logs=(S.logs||[]);S.logs.push('['+new Date().toLocaleTimeString('ar')+'] '+m);if(S.logs.length>200)S.logs.shift();sv('logs');const b=$('#logBox');if(b)b.textContent=S.logs.join('\n');}catch(_){}};
 /* ---------- نصوص ---------- */
@@ -156,6 +165,10 @@ const F={list:()=>S.facts,byKey:k=>S.facts.find(f=>f.k===k),
   for(const f of S.facts){if(f.k===k)continue;const ft=terms(f.k+' '+f.t);const ov=qt.filter(w=>ft.includes(w)).length;
    if(ov>=2&&(/ليس|لا |لم |لن |غير/.test(f.t)!==neg))con.push(f.k)}
   return {ok:!con.length,con:con.slice(0,4)}},
+ decay(){const now=Date.now();let ch=0;S.facts.forEach(f=>{if(now-(f.last||0)<36e5)return;
+  const hours=(now-(f.last||f.created))/(36e5);const d=Math.exp(-hours/24);
+  const q=.4+((f.q||.5)-.4)*d;if(Math.abs(q-(f.q||.5))>.01){f.q=Math.max(.08,Math.min(.98,q));ch++}});
+  if(ch){sv('facts');log('💭 انحلال ذاكرة: '+ch+' حقيقة أُعيد تقدير ثقتها')}},
  forgetOld(){const t0=Date.now(),cut=[];S.facts=S.facts.filter(f=>{const idle=t0-(f.last||f.created);
   if(idle>2592e6&&(f.src==='web'||f.src==='distill')&&!(f.hits>2)){cut.push(f.k);return false}return true});
   if(cut.length){sv('facts');log('🧹 نسيت '+cut.length+' معرفة قديمة غير مستخدمة')}return cut.length},
@@ -201,7 +214,222 @@ async function loadModel(f,keep){if(LM.busy)return;LM.busy=true;paintModel('⏳ 
   LM.ready=true;LM.name=f.name;if(keep){await P('model','gguf:'+f.name,f);S.cfg.act='gguf:'+f.name;sv('cfg');toast('🤖 جاهز وحُفظ')}else toast('🤖 جاهز: '+f.name)}
  catch(e){err(e,'model');toast('⚠️ '+(e.message||e).toString().slice(0,90))}LM.busy=false;paintModel()}
 async function useModel(k){const b=await G('model',k);if(!b)return toast('النموذج غير موجود');S.cfg.act=k;sv('cfg');await loadModel(new File([b],k.replace(/^gguf:/,'')),false)}
-async function ensureLLM(){if(LM.ready)return true;if(LM.busy)return false;
+async function ensureLLM(){if(LM.ready)return tr<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<title>أثير v12 — النواة الموحّدة</title>
+<style>
+:root{--bg:#0b1020;--s1:#121a30;--s2:#1a2542;--bd:#263353;--tx:#e9eefb;--dim:#93a0c4;--ac:#67e8f9;--ac2:#a78bfa;--ok:#4ade80;--er:#f87171;--wa:#fbbf24;--r:14px;--grad:linear-gradient(135deg,#667eea,#764ba2)}
+@media(prefers-color-scheme:light){:root{--bg:#f4f6fc;--s1:#fff;--s2:#eceffa;--bd:#d6dcea;--tx:#141a2c;--dim:#5b6785;--ac:#0891b2;--ac2:#7c3aed;--grad:linear-gradient(135deg,#667eea,#764ba2);color-scheme:light}}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--tx);font:15px/1.7 system-ui,"Segoe UI",Tahoma,sans-serif;min-height:100vh;padding-top:env(safe-area-inset-top)}
+header{background:var(--grad);color:#fff;padding:12px 14px;position:sticky;top:0;z-index:40;box-shadow:0 2px 14px #0006}
+header h1{font-size:1.25em;display:flex;align-items:center;gap:8px}
+header .sub{font-size:.72em;opacity:.9;margin-top:2px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);display:inline-block;animation:pl 2s infinite}
+@keyframes pl{50%{opacity:.4}}
+#ver{margin-inline-start:auto;font-size:.68em;background:#0003;padding:3px 10px;border-radius:99px}
+nav#tabs{display:flex;overflow-x:auto;background:var(--s1);border-bottom:1px solid var(--bd);scrollbar-width:none;position:sticky;top:calc(64px + env(safe-area-inset-top));z-index:30}
+nav#tabs::-webkit-scrollbar{display:none}
+nav#tabs button{flex:none;border:0;background:none;color:var(--dim);padding:11px 13px;font-size:.78em;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}
+nav#tabs button.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:700}
+main{padding:12px;max-width:900px;margin:auto}
+section.pg{display:none;animation:inn .22s}
+section.pg.on{display:block}
+@keyframes inn{from{opacity:0;transform:translateY(8px)}}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:14px}
+h3{color:var(--ac);font-size:1.02em;margin-bottom:10px}
+h4{font-size:.86em;margin:14px 0 6px;color:var(--tx)}
+.hint{font-size:.76em;color:var(--dim);line-height:1.8;margin:6px 0}
+input,textarea,select{width:100%;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:10px;color:var(--tx);font:inherit;margin:4px 0}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--ac);outline-offset:1px}
+textarea{resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1;min-width:100px}
+.b{min-height:44px;padding:8px 14px;border-radius:10px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);cursor:pointer;font-size:.85em;font-family:inherit}
+.b:active{transform:scale(.97)}
+.b.pr{background:var(--grad);color:#fff;border:0;font-weight:600}
+.b.okb{background:var(--ok);color:#052e12;border:0}
+.b.dn{color:var(--er)}
+.b.warn{color:var(--wa)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;margin:10px 0}
+.stat{background:var(--grad);color:#fff;padding:10px 6px;border-radius:10px;text-align:center}
+.stat b{display:block;font-size:1.4em;margin:2px 0}
+.stat span{font-size:.66em;opacity:.9}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.68em;margin:2px;background:#17a2b8;color:#fff}
+.badge.g{background:var(--ok);color:#052e12}.badge.y{background:var(--wa);color:#422}.badge.r{background:var(--er)}
+.it{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:9px;margin:6px 0;font-size:.82em}
+.it .tx{flex:1;overflow-wrap:anywhere}
+.it small{color:var(--dim)}
+.x{min-width:40px;height:40px;border:0;background:none;color:var(--er);font-size:15px;cursor:pointer}
+.chat{height:54vh;min-height:320px;overflow-y:auto;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:12px}
+.msg{max-width:88%;padding:10px 13px;border-radius:12px;margin:8px 0;font-size:.88em;line-height:1.7;overflow-wrap:anywhere;white-space:pre-wrap}
+.msg.u{background:var(--grad);color:#fff;margin-inline-start:auto;border-end-end-radius:3px}
+.msg.b{background:var(--s1);border:1px solid var(--bd);margin-inline-end:auto;border-end-start-radius:3px}
+.fb{display:flex;gap:6px;margin-top:8px}
+.fb button{width:36px;height:32px;border:1px solid var(--bd);background:var(--s2);border-radius:8px;cursor:pointer;font-size:.9em}
+.log{background:#0d1122;color:#cfd0e8;border-radius:10px;padding:10px;font:11.5px/1.7 monospace;max-height:220px;overflow:auto;direction:ltr;text-align:left;white-space:pre-wrap}
+.bar{height:8px;background:var(--s2);border-radius:6px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;width:0;background:var(--grad);transition:width .3s}
+.tgl{display:flex;align-items:center;gap:10px;padding:9px;background:var(--s2);border-radius:10px;margin:6px 0;font-size:.8em}
+.tgl input{width:18px;height:18px;flex:none}
+.ts{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--bd);padding:9px 16px;border-radius:99px;z-index:60;max-width:92vw;font-size:.8em;box-shadow:0 6px 20px #0008}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+#stealthCalc{display:none;position:fixed;inset:0;background:#111827;z-index:999;flex-direction:column;align-items:center;justify-content:center}
+#stealthCalc .box{width:280px;background:#1f2937;border-radius:22px;padding:18px;box-shadow:0 10px 40px #0008}
+#calcScr{background:#030712;color:#e5e7eb;border-radius:14px;padding:18px;font-size:28px;text-align:right;min-height:56px;direction:ltr;overflow:hidden;word-break:break-all}
+#calcKeys{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}
+#calcVer{text-align:center;color:#4b5563;font-size:10px;margin-top:12px}
+</style>
+</head>
+<body>
+<header>
+<h1>✦ أثير <span style="font-size:.55em;opacity:.85">v12 الموحّد</span><span id="ver">v12</span></h1>
+<div class="sub"><span class="dot" id="netdot"></span> عقل محلي هجين · ذاكرة تقوّي وتنسى · مهارات معزولة · تصنيف نوايا يتعلم منك</div>
+</header>
+<nav id="tabs"></nav>
+<main id="main"></main>
+<div id="stealthCalc"><div class="box"><div id="calcScr">0</div><div id="calcKeys"></div><div id="calcVer">Calculator v2.1.4</div></div></div>
+<script>
+'use strict';
+/* =====================================================
+   أثير v10 — نواة هجينة: رمزية + تقطير + نوايا متعلمة
+   ===================================================== */
+(()=>{
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s),ID=document;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const kb=n=>n>=1073741824?(n/1073741824).toFixed(2)+' GB':n>=1048576?(n/1048576).toFixed(1)+' MB':(n/1024).toFixed(0)+' KB';
+const toast=m=>{const t=ID.createElement('div');t.className='ts';t.textContent=m;ID.body.appendChild(t);setTimeout(()=>t.remove(),2600)};
+/* ---------- IndexedDB ---------- */
+let db;const open=()=>db?Promise.resolve(db):new Promise(r=>{try{const q=indexedDB.open('atheer10',1);
+q.onupgradeneeded=()=>['kv','chunk','doc','model'].forEach(n=>q.result.createObjectStore(n));
+q.onsuccess=()=>r(db=q.result);q.onerror=()=>r(null)}catch(e){r(null)}});
+const tx=(s,m,f)=>open().then(d=>d?new Promise(r=>{try{const t=d.transaction(s,m),q=f(t.objectStore(s));t.oncomplete=()=>r(q&&q.result);t.onerror=t.onabort=()=>r()}catch(e){r()}}):undefined);
+const P=(s,k,v)=>tx(s,'readwrite',o=>o.put(v,k)),G=(s,k)=>tx(s,'readonly',o=>o.get(k)),D=(s,ks)=>tx(s,'readwrite',o=>[].concat(ks).forEach(k=>o.delete(k))),AK=s=>tx(s,'readonly',o=>o.getAllKeys()),A=s=>tx(s,'readonly',o=>o.getAll()),PM=(s,rows)=>tx(s,'readwrite',o=>rows.forEach(r=>o.put(r[1],r[0])));
+const hasCS=typeof CompressionStream!=='undefined';
+const gz=s=>hasCS?new Response(new Blob([s]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer():new TextEncoder().encode(s).buffer;
+const ungz=b=>hasCS?new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).text():new TextDecoder().decode(b);
+/* ---------- الحالة ---------- */
+let S={chat:[],facts:[],gaps:{},errs:[],rules:[],skills:[],tasks:[],notes:[],xp:0,interactions:0,
+stat:{own:0,llm:0,web:0},dist:{},cls:{labels:{},vocab:{},trained:0},
+cfg:{web:0,strict:1,auto:0,tts:0,memFirst:1,act:''}},IX={N:0,len:0,post:{},cl:{}},DM={},Gr={n:{},e:{}},BUDGET=2*1073741824,MAXCH=120000;
+const sv=k=>{clearTimeout(sv[k]);sv[k]=setTimeout(()=>P('kv',k,S[k]),400)};
+const svIx=()=>{clearTimeout(svIx.t);svIx.t=setTimeout(async()=>P('kv','ix',await gz(JSON.stringify(IX))),1500)};
+const svG=()=>{clearTimeout(svG.t);svG.t=setTimeout(async()=>P('kv','g',await gz(JSON.stringify(Gr))),1500)};
+function err(e,w){w=w||'unknown';try{S.errCtx=S.errCtx||{};S.errCtx[w]=(S.errCtx[w]||0)+1;
+ if(S.errCtx[w]>=3&&!(S.safeMode&&S.safeMode[w])){S.safeMode=S.safeMode||{};S.safeMode[w]=Date.now();toast('⚠️ وضع آمن: عُطّل «'+w+'» ساعة')}
+ S.errs.unshift({t:Date.now(),w:w,m:String(e&&e.message||e).slice(0,180)});S.errs.length=Math.min(S.errs.length,40);sv('errs');sv('errCtx');sv('safeMode')}catch(_){}}
+addEventListener('error',e=>err(e.error||e.message,'window'));addEventListener('unhandledrejection',e=>err(e.reason,'promise'));
+const log=m=>{try{S.logs=(S.logs||[]);S.logs.push('['+new Date().toLocaleTimeString('ar')+'] '+m);if(S.logs.length>200)S.logs.shift();sv('logs');const b=$('#logBox');if(b)b.textContent=S.logs.join('\n');}catch(_){}};
+/* ---------- نصوص ---------- */
+const nz=s=>String(s||'').toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه');
+const STOP=new Set(nz('في من على الى إلى عن مع هذا هذه ذلك التي الذي هو هي ما ماذا كيف لماذا هل كان كانت يكون أن إن لم لن قد له لها ولا لكن أو ثم أيضا the and for are with that this what how who why').split(' '));
+const tk=s=>(nz(s).match(/[\u0621-\u063A\u0641-\u064A\u0660-\u0669a-z0-9]+/g)||[]).filter(w=>!STOP.has(w)).map(w=>w.replace(/^(?:وال|بال|لل|ال)(?=.{3})/,'')).filter(w=>w.length>1);
+const terms=s=>[...new Set(tk(s))];
+const chunks=t=>{const o=[];let c='';(t.match(/[^.!؟?؛\n]+[.!؟?؛\n]*/g)||[t]).forEach(x=>{for(let i=0;i<x.length;i+=800){const p=x.slice(i,i+800);if((c+p).length>600&&c){o.push(c);c=''}c+=p}});if(c)o.push(c);return o};
+const hs=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
+/* ---------- فهرس BM25 ---------- */
+async function ingest(name,text,kind){
+ text=String(text).replace(/\r/g,'').replace(/[ \t]+/g,' ').trim().slice(0,300000);if(text.length<20)return 0;
+ const h=hs(text);if(Object.values(DM).some(d=>d.h===h))return -1;
+ const id='d'+uid(),parts=chunks(text),rows=[],ids=[];let z=0;
+ for(let i=0;i<parts.length;i++){const cid=id+'_'+i,t=tk(parts[i]),tf={};t.forEach(w=>tf[w]=(tf[w]||0)+1);
+  for(const w in tf)(IX.post[w]=IX.post[w]||{})[cid]=tf[w];IX.cl[cid]=t.length;IX.N++;IX.len+=t.length;
+  const top=Object.entries(tf).filter(x=>x[0].length>3).sort((a,b)=>b[1]-a[1]).slice(0,6).map(x=>x[0]);link(top);
+  const b=await gz(parts[i]);z+=b.byteLength;rows.push([cid,{d:id,z:b}]);ids.push(cid)}
+ await PM('chunk',rows);DM[id]={id,name,kind,t:Date.now(),used:Date.now(),h,size:text.length,zsize:z,ids};
+ await P('doc',id,DM[id]);svIx();svG();xp(Math.min(20,ids.length));
+ if(IX.N>MAXCH||totZ()>BUDGET)await evictDocs();return ids.length}
+const totZ=()=>Object.values(DM).reduce((a,d)=>a+d.zsize,0);
+async function rmDoc(id){const d=DM[id];if(!d)return;const s=new Set(d.ids);
+ for(const w in IX.post){const p=IX.post[w];for(const c in p)if(s.has(c))delete p[c];if(!Object.keys(p).length)delete IX.post[w]}
+ d.ids.forEach(c=>{IX.len-=IX.cl[c]||0;delete IX.cl[c];IX.N--});await D('chunk',d.ids);await D('doc',id);delete DM[id];svIx()}
+async function evictDocs(){let n=0;while(Object.keys(DM).length&&(totZ()>BUDGET||IX.N>MAXCH)){await rmDoc(Object.values(DM).sort((a,b)=>a.used-b.used)[0].id);n++}return n}
+function rank(q,k){const t=terms(q),sc={},N=IX.N||1,avg=IX.len/N||1;
+ t.forEach(w=>{const p=IX.post[w];if(!p)return;const ids=Object.keys(p),idf=Math.log(1+(N-ids.length+.5)/(ids.length+.5));
+  ids.forEach(id=>{const f=p[id],dl=IX.cl[id]||avg;sc[id]=(sc[id]||0)+idf*f*2.2/(f+1.2*(.25+.75*dl/avg))})});
+ return Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,k||4)}
+async function retrieve(q,k){const r=rank(q,k||4),out=[];
+ for(const [cid] of r){const row=await G('chunk',cid);if(!row)continue;const d=DM[row.d];if(d){d.used=Date.now();P('doc',d.id,d)}
+  out.push({txt:await ungz(row.z),name:d?d.name:'؟'})}
+ const qt=terms(q),cov=out.length&&qt.length?qt.filter(w=>terms(out[0].txt).includes(w)).length/qt.length:0;
+ return {cs:out,top:r.length?r[0][1]:0,cov}}
+/* ---------- شبكة المفاهيم ---------- */
+function link(top){for(let i=0;i<top.length;i++){Gr.n[top[i]]=(Gr.n[top[i]]||0)+1;
+ for(let j=i+1;j<top.length;j++){const k=[top[i],top[j]].sort().join('|');Gr.e[k]=(Gr.e[k]||0)+1}}
+ const ks=Object.keys(Gr.e);if(ks.length>6000){const ne={};ks.sort((a,b)=>Gr.e[b]-Gr.e[a]).slice(0,5000).forEach(k=>ne[k]=Gr.e[k]);Gr.e=ne}}
+function adj(){const a={};for(const k in Gr.e){const [x,y]=k.split('|'),w=Gr.e[k];(a[x]=a[x]||[]).push([y,w]);(a[y]=a[y]||[]).push([x,w])}
+ for(const k in a)a[k].sort((p,q)=>q[1]-p[1]);return a}
+function gpath(a,b){if(!a||!b)return null;if(a===b)return[a];const A=adj(),prev={[a]:null};let fr=[a];
+ for(let d=0;d<4&&fr.length;d++){const nx=[];for(const u of fr)for(const [v] of (A[u]||[]).slice(0,25)){if(v in prev)continue;prev[v]=u;
+  if(v===b){const p=[];for(let c=b;c!==null;c=prev[c])p.push(c);return p.reverse()}nx.push(v)}fr=nx}return null}
+/* ---------- الذاكرة: تقوية / نسيان / تحقق ---------- */
+const F={list:()=>S.facts,byKey:k=>S.facts.find(f=>f.k===k),
+ store(k,t,src='manual',conf=.7){if(!k||!t)return;const old=F.byKey(k);
+  if(old){old.t=t;old.src=src;old.q=Math.max(old.q||.5,conf);old.last=Date.now()}
+  else S.facts.push({id:uid(),k,t,src,q:conf,hits:0,created:Date.now(),last:Date.now()});sv('facts')},
+ hit(f){f.hits=(f.hits||0)+1;f.last=Date.now();sv('facts')},
+ forget(){const max=500;if(S.facts.length<=max)return 0;
+  const sc=f=>((f.q||.5)*2+f.hits*.5+(Date.now()-f.last<6048e5?1:0)+(f.src==='manual'?1.5:0));
+  S.facts.sort((a,b)=>sc(b)-sc(a));const cut=S.facts.splice(max);sv('facts');return cut.length},
+ verify(k,t){const qt=terms(k+' '+t),neg=/ليس|لا |لم |لن |غير/.test(t);const con=[];
+  for(const f of S.facts){if(f.k===k)continue;const ft=terms(f.k+' '+f.t);const ov=qt.filter(w=>ft.includes(w)).length;
+   if(ov>=2&&(/ليس|لا |لم |لن |غير/.test(f.t)!==neg))con.push(f.k)}
+  return {ok:!con.length,con:con.slice(0,4)}},
+ decay(){const now=Date.now();let ch=0;S.facts.forEach(f=>{if(now-(f.last||0)<36e5)return;
+  const hours=(now-(f.last||f.created))/(36e5);const d=Math.exp(-hours/24);
+  const q=.4+((f.q||.5)-.4)*d;if(Math.abs(q-(f.q||.5))>.01){f.q=Math.max(.08,Math.min(.98,q));ch++}});
+  if(ch){sv('facts');log('💭 انحلال ذاكرة: '+ch+' حقيقة أُعيد تقدير ثقتها')}},
+ forgetOld(){const t0=Date.now(),cut=[];S.facts=S.facts.filter(f=>{const idle=t0-(f.last||f.created);
+  if(idle>2592e6&&(f.src==='web'||f.src==='distill')&&!(f.hits>2)){cut.push(f.k);return false}return true});
+  if(cut.length){sv('facts');log('🧹 نسيت '+cut.length+' معرفة قديمة غير مستخدمة')}return cut.length},
+ quality(){const qs=S.facts.map(f=>f.q||.5);return qs.length?qs.reduce((a,b)=>a+b,0)/qs.length:.5}};
+/* ---------- شبكة (اختياري) + حارس المحلي الصارم ---------- */
+const LOCAL_HOSTS=new Set(['localhost','127.0.0.1','::1']);
+const _fetch=window.fetch.bind(window);
+window.fetch=function(input,init){try{const raw=typeof input==='string'?input:(input&&input.url)||String(input);
+ const u=new URL(raw,location.href);
+ if(u.origin!==location.origin&&!LOCAL_HOSTS.has(u.hostname)){
+  if(S.cfg.strict)return Promise.reject(new TypeError('الوضع المحلي الصارم يمنع الاتصال الخارجي'));
+  if(!S.cfg.web)return Promise.reject(new TypeError('الإنترنت معطّل — فعّله من صفحة التعلّم'));}
+ return _fetch(input,init)}catch(e){return Promise.reject(e)}};
+const PX=[u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),u=>'https://corsproxy.io/?'+encodeURIComponent(u),u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)];
+async function ft(url,ms){if(!navigator.onLine)throw new Error('لا اتصال');let le;
+ for(const mk of [u=>u].concat(PX)){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||12000);
+  try{const r=await _fetch(mk(url),{signal:c.signal});if(!r.ok)throw new Error('HTTP '+r.status);return await r.text()}
+  catch(e){le=e}finally{clearTimeout(t)}}throw le||new Error('تعذر الوصول')}
+async function web(q){const out=[];
+ for(const L of['ar','en']){try{const j=JSON.parse(await ft('https://'+L+'.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrlimit=2&prop=extracts&exintro=1&explaintext=1&exlimit=2&gsrsearch='+encodeURIComponent(q)));
+  Object.values((j.query&&j.query.pages)||{}).forEach(x=>x.extract&&out.push({t:x.title,x:x.extract}))}catch(e){}}
+ try{const d=new DOMParser().parseFromString(await ft('https://html.duckduckgo.com/html/?q='+encodeURIComponent(q)),'text/html');
+  [...d.querySelectorAll('.result')].slice(0,3).forEach(r=>{const a=r.querySelector('.result__a'),s=r.querySelector('.result__snippet');if(a&&s)out.push({t:a.textContent.trim(),x:s.textContent.trim()})})}catch(e){}
+ return out}
+async function learnWeb(q){const r=await web(q);let n=0;
+ for(const x of r)if(await ingest('ويب: '+x.t,x.t+'\n'+x.x,'web')>0)n++;
+ if(n){r.slice(0,2).forEach(x=>F.store('ويب: '+x.t,x.x.slice(0,600),'web',.55));S.stat.web+=n;sv('stat')}return {r,n}}
+/* ---------- محرك GGUF (wllama) ---------- */
+const LM={w:null,ready:false,busy:false,name:''};
+async function embeddedEngine(){const E=window.__WLLAMA;if(!E)return null;const u8=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
+ return {m:await import(URL.createObjectURL(new Blob([u8(E.js)],{type:'text/javascript'}))),wasm:URL.createObjectURL(new Blob([u8(E.wasm)],{type:'application/wasm'}))}}
+async function boot(load){let e0;const LOCAL=localStorage.getItem('atheer_lib')||'./wllama/esm/',CDN='https://cdn.jsdelivr.net/npm/@wllama/wllama@3/esm/';
+ try{const E=await embeddedEngine();if(E){const w=new E.m.Wllama({default:E.wasm},{logger:E.m.LoggerWithoutDebug});await load(w);return w}}catch(e){e0=e}
+ const bases=[];try{if(await (await _fetch(LOCAL+'index.js',{method:'HEAD'})).ok)bases.push(LOCAL)}catch(e){}
+ if(S.cfg.web&&!S.cfg.strict&&navigator.onLine)bases.push(CDN);
+ for(const b of bases){let m;try{m=await import(b+'index.js')}catch(e){e0=e;continue}
+  for(const g of [async()=>({default:b+'wasm/wllama.wasm'}),async()=>(b===CDN?(await import(b+'wasm-from-cdn.js')).default:null)]){try{const cfg=await g();if(!cfg)continue;
+   const w=new m.Wllama(cfg,{logger:m.LoggerWithoutDebug});await load(w);return w}catch(e){e0=e}}}
+ throw new Error('محرك GGUF غير متاح: ضمّنه عبر حزمة embed-engine'+(S.cfg.web?'، أو فعّل الإنترنت':'، أو فعّل الإنترنت من صفحة التعلّم'))}
+async function loadModel(f,keep){if(LM.busy)return;LM.busy=true;paintModel('⏳ جارٍ التحميل...');
+ if(LM.w){try{await LM.w.exit()}catch(e){}LM.w=null;LM.ready=false}
+ try{if(!(f instanceof File))f=new File([f],'model.gguf');LM.w=await boot(w=>w.loadModel([f],{n_gpu_layers:0}));
+  LM.ready=true;LM.name=f.name;if(keep){await P('model','gguf:'+f.name,f);S.cfg.act='gguf:'+f.name;sv('cfg');toast('🤖 جاهز وحُفظ')}else toast('🤖 جاهز: '+f.name)}
+ catch(e){err(e,'model');toast('⚠️ '+(e.message||e).toString().slice(0,90))}LM.busy=false;paintModel()}
+async function useModel(k){const b=await G('model',k);if(!b)return toast('النموذج غير موجود');S.cfg.act=k;sv('cfg');await loadModel(new File([b],k.replace(/^gguf:/,'')),false)}ue;if(LM.busy)return false;
  const ks=(await AK('model'))||[],k=ks.includes(S.cfg.act)?S.cfg.act:ks[0];if(k)await useModel(k);return LM.ready}
 async function gen(q,ctx){if(!LM.ready)throw new Error('لا نموذج');
  const m=[{role:'system',content:'أنت «أثير» مساعد عربي موجز ودقيق يعمل محلياً. اعتمد على المعرفة المقدمة إن وُجدت، وإن لم تعرف فقل ذلك صراحة ولا تخترع.'}];
@@ -296,7 +524,7 @@ async function reply(q){let m;
  if(CM(/^مفاهيم (?:قريبة )?من\s+(\S+)/,x=>{clsTrain('شبكة',q);
   const n=adj()[terms(x[1])[0]];return n?'🕸 '+n.slice(0,10).map(v=>v[0]+' ×'+v[1]).join('، '):'🕸 لا روابط بعد'}))return CM.r;
  for(const r of S.rules)if(ruleHit(r,q))return r.r.replace(/\{q\}/g,q);
- for(const sk of S.skills){let mm=null;try{mm=q.match(new RegExp(sk.p,'i'))}catch(e){}
+ for(const sk of S.skills){if(S.safeMode&&S.safeMode['skill']&&Date.now()-S.safeMode['skill']<36e5)break;let mm=null;try{mm=q.match(new RegExp(sk.p,'i'))}catch(e){}
   if(mm){try{return await runSkill(sk.c,q,mm)}catch(e){err(e,'skill');return '⚠️ المهارة «'+sk.n+'»: '+e.message}}}
  /* تصنيف النوايا ثم الاسترجاع */
  const intent=clsPredict(q);
@@ -638,11 +866,14 @@ registerPage('sys','🩺','النظام',()=>`
 <div class="row"><button class="b pr" id="cGo">🔄 فحص</button><button class="b okb" id="cPe">🔒 تخزين دائم</button>
 <button class="b dn" id="cAll">⚠️ مسح كل البيانات</button></div>
 <label class="tgl"><input type="checkbox" id="cTts"> 🔊 قراءة الردود بصوت عالٍ</label>
+<label class="tgl"><input type="checkbox" id="cStealth"> 🕵️ وضع خفي — آلة حاسبة مقنعة (اضغط مطولاً على رقم الإصدار للخروج)</label>
 <div id="sysOut" class="hint"></div>
 <h4>السجل</h4><div class="log" id="logBox"></div>
 <button class="b gray" id="cLog">🧹 مسح السجل</button></div>`,root=>{
  root.querySelector('#cTts').checked=!!S.cfg.tts;
  root.querySelector('#cTts').onchange=e=>{S.cfg.tts=e.target.checked?1:0;sv('cfg')};
+ root.querySelector('#cStealth').checked=!!S.cfg.stealth;
+ root.querySelector('#cStealth').onchange=e=>{S.cfg.stealth=e.target.checked?1:0;sv('cfg');if(S.cfg.stealth)v12EnterStealth()};
  const box=root.querySelector('#logBox');box.textContent=(S.logs||[]).join('\n');box.scrollTop=box.scrollHeight;
  root.querySelector('#cGo').onclick=async()=>{const o=[];const add=(b,t,x)=>o.push(it((b?'✅ ':'❌ ')+t,x||''));
   let on=false;try{if(S.cfg.web&&!S.cfg.strict){await _fetch('https://www.gstatic.com/generate_204',{mode:'no-cors',cache:'no-store'});on=true}}catch(e){}
@@ -651,7 +882,7 @@ registerPage('sys','🩺','النظام',()=>`
   add(hasCS,'ضغط gzip');add(!!Worker,'عزل المهارات (Worker)');
   try{const e=await navigator.storage.estimate();add(true,'التخزين',kb(e.usage)+' / '+kb(e.quota))}catch(e){add(false,'قراءة التخزين')}
   add(true,'الوضع',S.cfg.strict?'محلي صارم 🔒':(S.cfg.web?'محلي + إنترنت اختياري':'محلي'))
-  root.querySelector('#sysOut').innerHTML=o.join('')+'<p class="hint">🧠 '+S.facts.length+' حقيقة • 📚 '+Object.keys(DM).length+' ملف • 🕸 '+Object.keys(Gr.n).length+' مفهوم • 🎯 مصنّف مدرّب على '+S.cls.trained+' عينة • 👍/👎 '+(S.stat.own+S.stat.llm)+' رد • المستوى '+(Math.floor(Math.sqrt(S.xp/20))+1)+'</p>'};
+  root.querySelector('#sysOut').innerHTML=o.join('')+'<p class="hint">🧠 '+S.facts.length+' حقيقة • 💭 '+Math.round(F.quality()*100)+'% • 📚 '+Object.keys(DM).length+' ملف • 🕸 '+Object.keys(Gr.n).length+' مفهوم • 🎯 مصنّف مدرّب على '+S.cls.trained+' عينة • 👍/👎 '+(S.stat.own+S.stat.llm)+' رد • المستوى '+(Math.floor(Math.sqrt(S.xp/20))+1)+'</p>'};
  root.querySelector('#cPe').onclick=async()=>{try{if(navigator.storage?.persist){toast((await navigator.storage.persist())?'🔒 دائم':'⚠️ رُفض')}else toast('غير مدعوم')}catch(e){toast('⚠️ '+e.message)}};
  root.querySelector('#cAll').onclick=async()=>{if(!confirm('سيُمسح كل شيء. متأكد؟'))return;if(!confirm('تأكيد أخير!'))return;
   try{db&&db.close()}catch(e){}indexedDB.deleteDatabase('atheer10');location.reload()};
@@ -666,11 +897,151 @@ function buildNav(){
   const s=ID.createElement('section');s.className='pg'+(i===0?' on':'');s.id='pg-'+p.id;
   s.innerHTML=p.html();main.appendChild(s)});
  PAGES[0].mount($('#pg-'+PAGES[0].id))}
-function go(id){$$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.p===id));
+function go(id,push){$$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.p===id));
  $$('main section.pg').forEach(s=>s.classList.toggle('on',s.id==='pg-'+id));
+ if(push!==false)try{history.pushState({p:id},'','#'+id)}catch(e){}
  const pg=PAGES.find(p=>p.id===id);if(pg)try{pg.mount($('#pg-'+id))}catch(e){err(e,'page:'+id)}}
+addEventListener('popstate',e=>{const p=(e.state&&e.state.p)||(location.hash||'').slice(1);if(PAGES.some(x=>x.id===p))go(p,false)});
+
+/* =====================================================
+   أثير v12 — طبقة الموحّد: خفي · أخطاء/وضع آمن · WebDAV · APK
+   ===================================================== */
+let _v12expr='';
+function v12Calc(k){const s=document.getElementById('calcScr');if(!s)return;
+ if(k==='C'){_v12expr='';s.textContent='0';return}
+ if(k==='⌫'){_v12expr=_v12expr.slice(0,-1);s.textContent=_v12expr||'0';return}
+ if(k==='÷')k='/';if(k==='×')k='*';if(k==='−')k='-';
+ if(k==='='){try{_v12expr=String(Function('"use strict";return('+(_v12expr||'0')+')')())}catch(e){_v12expr='';s.textContent='خطأ';return}s.textContent=_v12expr;return}
+ _v12expr+=k;s.textContent=_v12expr}
+function v12BuildCalc(){const w=document.getElementById('calcKeys');if(!w)return;w.innerHTML='';
+ ['C','⌫','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0','.','(',')','='].forEach(k=>{const b=document.createElement('button');b.textContent=k;
+ b.style.cssText='padding:14px 0;font-size:18px;border:none;border-radius:12px;background:#374151;color:#e5e7eb;cursor:pointer;';
+ if('÷×−+='.includes(k))b.style.background='#4b5563';if(k==='C')b.style.background='#7c2d12';
+ b.onclick=()=>v12Calc(k);w.appendChild(b)});
+ let t=null;const v=document.getElementById('calcVer');
+ const dn=()=>{t=setTimeout(v12ExitStealth,900)},up=()=>clearTimeout(t);
+ v.addEventListener('touchstart',dn);v.addEventListener('touchend',up);v.addEventListener('mousedown',dn);v.addEventListener('mouseup',up)}
+function v12EnterStealth(){v12BuildCalc();document.getElementById('stealthCalc').style.display='flex'}
+function v12ExitStealth(){document.getElementById('stealthCalc').style.display='none';S.cfg.stealth=0;sv('cfg');toast('✓ عدت إلى أثير')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.cfg.stealth){const el=document.getElementById('stealthCalc');if(el&&el.style.display==='flex')v12ExitStealth()}});
+
+function v12Snap(){return {format:'atheer12-sync',t:Date.now(),facts:S.facts,tasks:S.tasks,notes:S.notes,rules:S.rules,skills:S.skills,gaps:S.gaps,cls:S.cls,chat:S.chat.slice(-40),graph:Gr}}
+function v12Merge(d){let n=0;if(!d)return 0;
+ const add=(arr,items)=>{if(!Array.isArray(items))return;items.forEach(x=>{if(x&&x.id&&!arr.some(y=>y.id===x.id)){arr.push(x);n++}})};
+ add(S.facts,d.facts);add(S.tasks,d.tasks);add(S.notes,d.notes);
+ (d.rules||[]).forEach(r=>{if(r&&!S.rules.some(x=>x.p===r.p&&x.r===r.r)){S.rules.push(r);n++}});
+ (d.skills||[]).forEach(s=>{if(s&&!S.skills.some(x=>x.n===s.n)){S.skills.push(s);n++}});
+ if(d.cls&&d.cls.labels){for(const l in d.cls.labels){const L=d.cls.labels[l];if(!S.cls.labels[l]){S.cls.labels[l]=L;S.cls.trained+=L.n||0;n++}}}
+ if(d.graph){for(const k in (d.graph.n||{})){Gr.n[k]=(Gr.n[k]||0)+d.graph.n[k]}for(const k in (d.graph.e||{})){Gr.e[k]=(Gr.e[k]||0)+d.graph.e[k]}svG()}
+ return n}
+async function v12Sync(push){S.cfg.sync=S.cfg.sync||{};const y=S.cfg.sync;
+ if(!y.url||!y.user){toast('⚙️ اضبط رابط WebDAV أولاً');return}
+ if(S.cfg.strict){toast('🔒 الوضع الصارم يمنع الاتصال — عطّله من التعلّم');return}
+ if(!S.cfg.web&&!confirm('الإنترنت معطّل — أسمح به مؤقتاً للمزامنة؟'))return;
+ try{const url=y.url.replace(/\/$/,'')+'/'+(y.file||'atheer_sync.json');
+  const auth='Basic '+btoa(y.user+':'+y.pass);
+  let added=0;
+  try{const g=await _fetch(url,{headers:{Authorization:auth}});if(g.ok)added=v12Merge(await g.json())}catch(e){}
+  const r=await _fetch(url,{method:'PUT',headers:{Authorization:auth,'Content-Type':'application/json'},body:JSON.stringify(v12Snap())});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  y.lastSync=Date.now();sv('cfg');
+  ['facts','tasks','notes','rules','skills','gaps','cls','chat'].forEach(sv);
+  if(push)toast('☁️ تمت المزامنة'+(added?' — استلمت '+added+' عنصر':''));
+  log('☁️ مزامنة WebDAV'+(added?' (+ '+added+')':''))}
+ catch(e){err(e,'sync');if(push)toast('☁️ فشلت: '+e.message)}}
+
+function v12Zip(files){const enc=new TextEncoder(),parts=[],cds=[];let off=0;
+ const T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0}return t})();
+ const crc=a=>{let c=0xFFFFFFFF;for(let i=0;i<a.length;i++)c=T[(c^a[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+ files.forEach(f=>{const name=enc.encode(f.name),data=typeof f.data==='string'?enc.encode(f.data):f.data,c=crc(data);
+  const h=new Uint8Array(30+name.length),hv=new DataView(h.buffer);
+  hv.setUint32(0,0x04034b50,true);hv.setUint16(4,20,true);hv.setUint16(6,0x0800,true);hv.setUint16(8,0,true);
+  hv.setUint16(10,0,true);hv.setUint16(12,0x0021,true);hv.setUint32(14,c,true);hv.setUint32(18,data.length,true);
+  hv.setUint32(22,data.length,true);hv.setUint16(26,name.length,true);h.set(name,30);parts.push(h,data);
+  const cd=new Uint8Array(46+name.length),cv=new DataView(cd.buffer);
+  cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);
+  cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0x0021,true);cv.setUint32(16,c,true);
+  cv.setUint32(20,data.length,true);cv.setUint32(24,data.length,true);cv.setUint16(28,name.length,true);
+  cv.setUint32(42,off,true);cd.set(name,46);cds.push(cd);off+=h.length+data.length});
+ const cb=(()=>{let t=0;cds.forEach(a=>t+=a.length);const o=new Uint8Array(t);let p=0;cds.forEach(a=>{o.set(a,p);p+=a.length});return o})();
+ const end=new Uint8Array(22),ev=new DataView(end.buffer);
+ ev.setUint32(0,0x06054b50,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);
+ ev.setUint32(12,cb.length,true);ev.setUint32(16,off,true);
+ const all=parts.concat([cb,end]);let t=0;all.forEach(a=>t+=a.length);const o=new Uint8Array(t);let p=0;all.forEach(a=>{o.set(a,p);p+=a.length});return o}
+
+async function v12BuildApk(upgrade){try{
+ if(upgrade)S.cfg.vc=(S.cfg.vc||1)+1;const vc=S.cfg.vc||1;sv('cfg');
+ const pkg='com.atheer.app',p=pkg.replace(/\./g,'/');
+ const src='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+ const files=[
+  {name:'atheer-app/settings.gradle',data:'pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositories {\n        google()\n        mavenCentral()\n    }\n}\nrootProject.name = "atheer-app"\ninclude ":app"\n'},
+  {name:'atheer-app/build.gradle',data:'plugins {\n    id "com.android.application" version "8.5.0" apply false\n}\n'},
+  {name:'atheer-app/app/build.gradle',data:'plugins {\n    id "com.android.application"\n}\nandroid {\n    namespace "'+pkg+'"\n    compileSdk 34\n    defaultConfig {\n        applicationId "'+pkg+'"\n        minSdk 21\n        targetSdk 34\n        versionCode '+vc+'\n        versionName "12.0"\n    }\n    buildTypes {\n        debug {}\n        release { minifyEnabled false }\n    }\n    compileOptions {\n        sourceCompatibility JavaVersion.VERSION_17\n        targetCompatibility JavaVersion.VERSION_17\n    }\n}\n'},
+  {name:'atheer-app/app/src/main/AndroidManifest.xml',data:'<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <application android:label="@string/app_name" android:theme="@android:style/Theme.NoTitleBar" android:usesCleartextTraffic="true" android:allowBackup="true">\n        <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize" android:configChanges="orientation|screenSize|keyboardHidden|uiMode">\n            <intent-filter>\n                <action android:name="android.intent.action.MAIN"/>\n                <category android:name="android.intent.category.LAUNCHER"/>\n            </intent-filter>\n        </activity>\n    </application>\n</manifest>\n'},
+  {name:'atheer-app/app/src/main/java/'+p+'/MainActivity.java',data:'package '+pkg+';\n\nimport android.app.Activity;\nimport android.os.Bundle;\nimport android.webkit.WebView;\nimport android.webkit.WebViewClient;\nimport android.webkit.WebSettings;\n\npublic class MainActivity extends Activity {\n    private WebView wv;\n    @Override protected void onCreate(Bundle saved){\n        super.onCreate(saved);\n        wv = new WebView(this);\n        WebSettings ws = wv.getSettings();\n        ws.setJavaScriptEnabled(true);\n        ws.setDomStorageEnabled(true);\n        ws.setDatabaseEnabled(true);\n        ws.setAllowFileAccess(true);\n        ws.setAllowContentAccess(true);\n        ws.setMediaPlaybackRequiresUserGesture(false);\n        wv.setWebViewClient(new WebViewClient());\n        setContentView(wv);\n        wv.loadUrl("file:///android_asset/www/index.html");\n    }\n    @Override public void onBackPressed(){\n        if(wv != null && wv.canGoBack()) wv.goBack(); else super.onBackPressed();\n    }\n}\n'},
+  {name:'atheer-app/app/src/main/res/values/strings.xml',data:'<resources>\n    <string name="app_name">أثير</string>\n</resources>\n'},
+  {name:'atheer-app/app/src/main/assets/www/index.html',data:src},
+  {name:'atheer-app/app/src/main/assets/www/version.json',data:JSON.stringify({app:'atheer',package:pkg,versionCode:vc,versionName:'12.0',builtAt:new Date().toISOString()},null,1)},
+  {name:'atheer-app/.github/workflows/build-apk.yml',data:'name: Build APK\non: [push, workflow_dispatch]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-java@v4\n        with:\n          distribution: temurin\n          java-version: "17"\n      - uses: android-actions/setup-android@v3\n      - name: Install Gradle\n        run: |\n          wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip\n          unzip -q gradle-8.7-bin.zip\n      - name: Accept licenses\n        run: yes | sdkmanager --licenses || true\n      - name: Build debug APK\n        run: |\n          cd atheer-app\n          ../gradle-8.7/bin/gradle assembleDebug --no-daemon --warning-mode=none\n      - uses: actions/upload-artifact@v4\n        with:\n          name: atheer-apk-vc'+vc+'\n          path: atheer-app/app/build/outputs/apk/debug/app-debug.apk\n'},
+  {name:'atheer-app/README.txt',data:'أثير v12 — مشروع APK\n===========================\nالحزمة: '+pkg+'\nversionCode: '+vc+'\n\nالبناء من الهاتف:\n1) ارفع مجلد atheer-app إلى GitHub\n2) افتح Actions — يُبنى app-debug.apk تلقائياً\n3) نزّل artifact وثبّت\n\nالترقية: نفس الحزمة + versionCode أعلى = بياناتك محفوظة.\n'}];
+ const zip=v12Zip(files);const a=ID.createElement('a');
+ a.href=URL.createObjectURL(new Blob([zip],{type:'application/zip'}));
+ a.download='atheer_project_vc'+vc+'.zip';ID.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+ S.builds=S.builds||[];S.builds.unshift({t:Date.now(),vc,size:zip.length});sv('builds');
+ toast('📦 صُدّر المشروع vc'+vc+' — '+(zip.length/1024).toFixed(0)+' KB');
+ log('📦 بناء APK مشروع vc'+vc)}catch(e){err(e,'apk');toast('⚠️ فشل البناء: '+e.message)}}
+
+registerPage('sync','☁️','المزامنة',()=>`
+<div class="card"><h3>☁️ مزامنة WebDAV</h3>
+<p class="hint">تُرفع المعرفة والمهام والقواعد والمصنّف والشبكة إلى ملف JSON على خادم WebDAV (Nextcloud وغيره). يتطلب السماح بالإنترنت وتعطيل الوضع الصارم.</p>
+<input id="sU" placeholder="الرابط — https://cloud.example.com/remote.php/dav/files/USER/">
+<input id="sUs" placeholder="المستخدم"><input id="sP" type="password" placeholder="كلمة المرور">
+<input id="sF" placeholder="اسم الملف (افتراضي atheer_sync.json)">
+<div class="row"><button class="b pr" id="sSave">💾 حفظ</button><button class="b" id="sTest">🔌 اختبار</button><button class="b okb" id="sGo">🔄 مزامنة الآن</button></div>
+<div id="sSt" class="hint"></div></div>`,root=>{
+ const y=S.cfg.sync=S.cfg.sync||{};
+ root.querySelector('#sU').value=y.url||'';root.querySelector('#sUs').value=y.user||'';
+ root.querySelector('#sP').value=y.pass||'';root.querySelector('#sF').value=y.file||'';
+ root.querySelector('#sSt').textContent='آخر مزامنة: '+(y.lastSync?new Date(y.lastSync).toLocaleString('ar'):'لم تتم');
+ const save=()=>{y.url=root.querySelector('#sU').value.trim();y.user=root.querySelector('#sUs').value.trim();y.pass=root.querySelector('#sP').value;y.file=root.querySelector('#sF').value.trim()||'atheer_sync.json';sv('cfg');toast('💾 حُفظ')};
+ root.querySelector('#sSave').onclick=save;
+ root.querySelector('#sTest').onclick=async()=>{save();
+  if(S.cfg.strict)return toast('🔒 الوضع الصارم مفعّل');
+  if(!S.cfg.web)return toast('🌐 فعّل الإنترنت من صفحة التعلّم');
+  try{const r=await _fetch(y.url.replace(/\/$/,'')+'/'+y.file,{headers:{Authorization:'Basic '+btoa(y.user+':'+y.pass)}});
+   toast(r.ok||r.status===404?'✅ متصل (HTTP '+r.status+')':'⚠️ HTTP '+r.status)}catch(e){toast('⚠️ '+e.message)}};
+ root.querySelector('#sGo').onclick=()=>{save();v12Sync(true)}});
+
+registerPage('apk','📦','بناء APK',()=>`
+<div class="card"><h3>📦 مشروع Android (WebView)</h3>
+<p class="hint">يُصدَّر مشروع Gradle كامل (ZIP) بكود أثير الحالي داخله. ارفعه إلى GitHub — يبنيه Actions تلقائياً. الحزمة ثابتة com.atheer.app والترقية تحفظ بياناتك.</p>
+<div id="apkInfo" class="hint"></div>
+<div class="row"><button class="b pr" id="apkB">🔨 ابنِ المشروع</button>
+<button class="b okb" id="apkU">⬆️ ترقية (+1)</button></div>
+<h4>سجل البناء</h4><div id="apkList"></div></div>`,root=>{
+ const r=()=>{root.querySelector('#apkInfo').textContent='الحزمة: com.atheer.app • versionCode: '+(S.cfg.vc||1);
+  root.querySelector('#apkList').innerHTML=(S.builds||[]).slice(0,8).map(b=>it('📦 vc'+b.vc,'<small>'+new Date(b.t).toLocaleString('ar')+' • '+(b.size/1024).toFixed(0)+' KB</small>')).join('')||'<p class="hint">لا بناءات بعد.</p>'};
+ r();
+ root.querySelector('#apkB').onclick=()=>v12BuildApk(false);
+ root.querySelector('#apkU').onclick=()=>v12BuildApk(true)});
+
+registerPage('errs','⚠️','الأخطاء',()=>`
+<div class="card"><h3>⚠️ سجل الأخطاء والوضع الآمن</h3>
+<p class="hint">تُسجَّل الأخطاء تلقائياً. تكرار الخطأ في سياق واحد 3 مرات يُفعّل «الوضع الآمن» له ساعة كاملة (يعطّل المهارات المعزولة مثلاً).</p>
+<div id="errStats" class="hint"></div>
+<div class="row"><button class="b dn" id="eClear">🧹 مسح السجل</button>
+<button class="b" id="eSafe">✅ إلغاء الوضع الآمن</button></div>
+<h4>آخر الأخطاء</h4><div id="eList"></div></div>`,root=>{
+ const r=()=>{const cs=S.errCtx||{};
+  root.querySelector('#errStats').textContent=Object.keys(cs).length?('السياقات: '+Object.entries(cs).map(([k,v])=>k+' ×'+v).join('، ')):'لا أخطاء ✨';
+  root.querySelector('#eList').innerHTML=S.errs.slice(0,30).map(e=>it('⚠️ '+esc(e.m),'<small>'+new Date(e.t).toLocaleString('ar')+' • '+esc(e.w)+'</small>')).join('')||'<p class="hint">السجل فارغ.</p>'};
+ r();
+ root.querySelector('#eClear').onclick=()=>{S.errs=[];S.errCtx={};sv('errs');sv('errCtx');r();toast('🧹 مُسح')};
+ root.querySelector('#eSafe').onclick=()=>{S.safeMode={};sv('safeMode');toast('✅ أُلغي الوضع الآمن')}});
+
 (async()=>{
- try{for(const k of ['chat','facts','gaps','rules','skills','tasks','notes','xp','interactions','stat','dist','cls','cfg','errs','logs','learned']){const v=await G('kv',k);if(v!=null)S[k]=v}
+ try{for(const k of ['chat','facts','gaps','rules','skills','tasks','notes','xp','interactions','stat','dist','cls','cfg','errs','errCtx','safeMode','logs','learned']){const v=await G('kv',k);if(v!=null)S[k]=v}
   const ix=await G('kv','ix');if(ix)IX=JSON.parse(await ungz(ix));
   const gg=await G('kv','g');if(gg)Gr=JSON.parse(await ungz(gg));
   (await A('doc')||[]).forEach(d=>DM[d.id]=d);
@@ -680,12 +1051,14 @@ function go(id){$$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.
   const n=F.forget();if(n)log('🧹 نُسيت '+n+' معرفة منخفضة القيمة');
   if(Date.now()-(S.lastForget||0)>864e5){S.lastForget=Date.now();sv('lastForget');F.forgetOld()}}catch(e){err(e,'boot')}
  buildNav();
+ const _h=(location.hash||'').slice(1);if(_h&&PAGES.some(x=>x.id===_h))go(_h,false);
+ if(S.cfg.stealth)v12EnterStealth();
  const dot=$('#netdot');const ping=()=>{dot.style.background=(S.cfg.web&&!S.cfg.strict&&navigator.onLine)?'var(--ok)':'var(--wa)'};
  ping();addEventListener('online',ping);addEventListener('offline',ping);
- if(!S.chat.length)S.chat.push({r:'b',t:'أهلاً! أنا أثير v10 ✦ العقل الهجين المحلي.\n\nارفع ملفاتك في «المكتبة»، علّمني في «المعرفة»، أو حمّل نموذج GGUF في «النموذج» و«قطّر» منه المعرفة. علّمني بـ 👍 و👎 لأرتقي بتصنيفي.\n\nأنا أعمل بلا إنترنت افتراضياً — الإنترنت اختياري من صفحة «التعلّم».'});
+ if(!S.chat.length)S.chat.push({r:'b',t:'أهلاً! أنا أثير v12 ✦ النواة الموحّدة.\n\nارفع ملفاتك في «المكتبة»، علّمني في «المعرفة»، أو حمّل نموذج GGUF في «النموذج» و«قطّر» منه المعرفة. علّمني بـ 👍 و👎 لأرتقي بتصنيفي.\n\nأنا أعمل بلا إنترنت افتراضياً — الإنترنت اختياري من صفحة «التعلّم».'});
  setInterval(()=>{if(S.cfg.auto&&Object.keys(S.gaps).length&&LM.ready&&!busy){distillGaps().catch(e=>err(e,'auto'))}},600000);
- setInterval(()=>{if(Date.now()-(S.lastForget||0)>864e5){S.lastForget=Date.now();sv('lastForget');F.forgetOld()}},36e5);
- log('✅ أثير v10 جاهز — '+S.facts.length+' حقيقة، '+Object.keys(DM).length+' ملف');
+ setInterval(()=>{F.decay();if(Date.now()-(S.lastForget||0)>864e5){S.lastForget=Date.now();sv('lastForget');F.forgetOld()}},36e5);
+ log('✅ أثير v12 جاهز — '+S.facts.length+' حقيقة، '+Object.keys(DM).length+' ملف');
 })();
 })();
 </script>
