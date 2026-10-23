@@ -1,72 +1,33 @@
-name: Build APK
-on: [push, workflow_dispatch]
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-env:
-  HAS_KS: ${{ secrets.ANDROID_KEYSTORE_B64 != '' }}
+const dir = path.dirname(fileURLToPath(import.meta.url));
+const wd = path.join(dir, 'node_modules', '@wllama', 'wllama');
+const pick = x => typeof x === 'string' ? x : (x && (x.default || x.import || x.module)) || null;
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+function wllamaEntry() {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(wd, 'package.json'), 'utf8'));
+    const e = (pkg.exports && pkg.exports['.']) || {};
+    const rel = pick(e.import) || pick(e.default) || pick(e.browser) || pick(pkg.exports) || pick(pkg.module) || pick(pkg.main);
+    if (rel) {
+      const abs = path.resolve(wd, rel);
+      if (fs.existsSync(abs)) return abs;
+    }
+  } catch (err) {}
+  return '@wllama/wllama';
+}
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Generate lock file on runner
-        run: npm install --package-lock-only
-
-      - name: Install dependencies
-        run: npm ci
-
-      - run: npm run build
-
-      - name: Assemble Android project
-        run: |
-          set -e
-          VC=${{ github.run_number }}
-          cp -r android-template atheer-app
-          mkdir -p atheer-app/app/src/main/assets/www
-          cp -r dist/* atheer-app/app/src/main/assets/www/
-          sed -i "s/PLACEHOLDER_VC/$VC/" atheer-app/app/build.gradle
-          echo '{"app":"atheer","package":"com.atheer.app","versionCode":'$VC',"versionName":"12.0","builtAt":"'$(date -Is)'"}' > atheer-app/app/src/main/assets/www/version.json
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - uses: android-actions/setup-android@v3
-
-      - name: Install Gradle
-        run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip
-          unzip -q gradle-8.7-bin.zip
-
-      - name: Accept licenses
-        run: yes | sdkmanager --licenses || true
-
-      - name: Decode keystore
-        if: env.HAS_KS == 'true'
-        run: echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > atheer-app/app/atheer.keystore
-
-      - name: Build signed APK
-        if: env.HAS_KS == 'true'
-        env:
-          KS_PASS: ${{ secrets.KS_PASS }}
-          KEY_PASS: ${{ secrets.KEY_PASS }}
-        run: |
-          cd atheer-app
-          ../gradle-8.7/bin/gradle assembleDebug --no-daemon -PksPass="$KS_PASS" -PkeyPass="$KEY_PASS" --warning-mode=none
-
-      - name: Build debug APK (no keystore yet)
-        if: env.HAS_KS != 'true'
-        run: |
-          cd atheer-app
-          ../gradle-8.7/bin/gradle assembleDebug --no-daemon --warning-mode=none
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: atheer-apk-vc${{ github.run_number }}
-          path: atheer-app/app/build/outputs/apk/debug/app-debug.apk
+export default defineConfig({
+  plugins: [react()],
+  base: './',
+  resolve: {
+    alias: [
+      { find: /^@wllama\/wllama$/, replacement: wllamaEntry() },
+      { find: /^@wllama\/wllama\//, replacement: wd + path.sep }
+    ]
+  }
+});
