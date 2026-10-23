@@ -1,5 +1,5 @@
 import { Wllama } from '@wllama/wllama';
-// هذا السطر هو "الحل الحقيقي": يجبر Vite على نسخ ملف الـ wasm ووضعه في مجلد الـ assets
+// السطر السحري: يجبر Vite على نسخ ملف الـ wasm ووضعه في مجلد الـ assets
 import wasmUrl from '@wllama/wllama/src/single-thread/wllama.wasm?url';
 import { P,G,AK,D } from './db.js';
 import { S,sv,toast,log } from './store.js';
