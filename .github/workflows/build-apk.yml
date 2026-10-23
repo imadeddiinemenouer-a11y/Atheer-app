@@ -13,9 +13,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
-      - run: npm ci
+      - name: Generate lock file on runner
+        run: npm install --package-lock-only
+
+      - name: Install dependencies
+        run: npm ci
+
       - run: npm run build
 
       - name: Assemble Android project
