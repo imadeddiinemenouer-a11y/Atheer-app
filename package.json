@@ -1,10 +1,20 @@
 {
-  "name": "atheer-app",
-  "version": "1.0.0",
-  "description": "أثير v10 - العقل الهجين المحلي",
+  "name": "atheer-react",
+  "private": true,
+  "version": "12.0.0",
+  "type": "module",
   "scripts": {
-    "build": "echo \"No build step required\""
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  "author": "Your Name",
-  "license": "MIT"
+  "dependencies": {
+    "@wllama/wllama": "^2.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  }
 }
