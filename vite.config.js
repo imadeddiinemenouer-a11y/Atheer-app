@@ -3,9 +3,12 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // ضروري جداً ليعمل التطبيق داخل الـ APK
+  base: './', // ضروري للعمل داخل الـ APK
+  build: {
+    outDir: 'dist', // مجلد البناء
+    emptyOutDir: false, // ✅ هذا هو السر: لا تحذف ملف wllama.wasm الموجود مسبقاً!
+  },
   optimizeDeps: {
-    // نستبعد wllama من محاولة Vite تحسينها مسبقاً لتجنب خطأ entry point
-    exclude: ['@wllama/wllama']
+    exclude: ['@wllama/wllama'] // نمنع Vite من محاولة تحسينها
   }
 });
