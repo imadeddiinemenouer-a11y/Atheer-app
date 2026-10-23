@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {S,sv,toast,bump} from '../core/store.js';
+import {S,sv,toast} from '../core/store.js';
 import {F} from '../core/memory.js';
 import {Gr,link} from '../core/graph.js';
 import {terms,nz} from '../core/text.js';
@@ -31,9 +31,8 @@ export default function Knowledge(){
     <button className="b pr" onClick={add}>➕ حفظ (مع فحص تعارض)</button>
     <input placeholder="🔎 بحث في المعرفة" value={q} onChange={e=>setQ(e.target.value)}/>
     {list.map(f=><Item key={f.id}
-      title={f.k+'
-'+(f.t||'').slice(0,150)}
-      sub={' '}
+      title={f.k+' — '+(f.t||'').slice(0,150)}
+      sub={new Date(f.created||Date.now()).toLocaleDateString('ar')}
       actions={<>
         <Badge cls={f.src==='manual'?'':f.src==='distill'?'g':''}>{f.src} {Math.round((f.q||.5)*100)}%</Badge>
         <button className="x" onClick={()=>{S.facts=S.facts.filter(x=>x.id!==f.id);sv('facts');refresh()}}>✕</button>
